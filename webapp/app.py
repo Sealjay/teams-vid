@@ -1,25 +1,21 @@
-from azure.storage import blob
-import databases
-import sqlalchemy
+""" Server allows people to record themselves on the fly,
+and sync with their teams, wherever they may be."""
 import uuid
+import os
+from azure.storage.blob import ContentSettings
+from azure.storage.blob.aio import BlobClient, BlobServiceClient
 from starlette.applications import Starlette
 from starlette.responses import FileResponse
-from starlette.routing import Route
-from starlette.applications import Starlette
-from starlette.routing import Mount
 from starlette.staticfiles import StaticFiles
-from starlette.applications import Starlette
 from starlette.routing import Route, Mount
 from starlette.templating import Jinja2Templates
-from starlette.staticfiles import StaticFiles
 from starlette.middleware import Middleware
 from starlette.middleware.gzip import GZipMiddleware
-import aiofiles
-import multipart
+import aiofiles  # pylint: disable=W0611
+import multipart  # pylint: disable=W0611
 from dotenv import load_dotenv
-from azure.storage.blob.aio import BlobClient, BlobServiceClient
-from azure.storage.blob import ContentSettings
-import os
+
+
 import uvicorn
 
 templates = Jinja2Templates(directory="templates")
@@ -27,11 +23,12 @@ load_dotenv()
 
 
 async def homepage(request):
-    # print(request.headers)
+    """Renders the default homepage."""
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 async def gallery(request):
+    """Renders the gallery view from uploaded blob storage."""
     blob_service_client = BlobServiceClient(
         account_url=f"https://{os.getenv('AZURE_STORAGE_ACCOUNT')}.blob.core.windows.net/",
         credential=os.getenv("AZURE_STORAGE_KEY"),
@@ -40,7 +37,9 @@ async def gallery(request):
         os.getenv("AZURE_STORAGE_VIDEO_CONTAINER")
     )
     blobs_list = []
-    async for blob in container_client.list_blobs(include=["metadata"]):
+    async for blob in container_client.list_blobs(  # pylint: disable=E1133
+        include=["metadata"]
+    ):
         metadata = blob.metadata
         blobs_list.append(
             {
@@ -59,24 +58,27 @@ async def gallery(request):
 
 
 async def record(request):
+    """Renders the video recording and upload view."""
     return templates.TemplateResponse("record.html", {"request": request})
 
 
 async def play(request):
+    """Renders the video player view."""
     return templates.TemplateResponse("play.html", {"request": request})
 
 
 async def about(request):
+    """Renders the About page."""
     return templates.TemplateResponse("about.html", {"request": request})
 
 
-async def add_file_to_db(file_name, file_contents, file_content_type):
+async def add_file_and_metadata_to_blob_storage(
+    file_name, file_contents, file_content_type
+):
+    """Adds uploaded files to blob storage with metadata."""
     extension = file_name.split(".")[-1].lower()
     file_uuid_str = str(uuid.uuid4())
     new_filename = f"{file_uuid_str}.{extension}"
-    async with aiofiles.open(f"uploads/{new_filename}", "wb") as file:
-        await file.write(file_contents)
-        await file.close()
     blob = BlobClient(
         account_url=f"https://{os.getenv('AZURE_STORAGE_ACCOUNT')}.blob.core.windows.net/",
         credential=os.getenv("AZURE_STORAGE_KEY"),
@@ -98,20 +100,21 @@ async def add_file_to_db(file_name, file_contents, file_content_type):
     await blob.close()
 
 
-async def file_upload(request):
+async def upload_completed(request):
+    """Renders the file completed upload page."""
     form = await request.form()
     video_recording = form["video_recording"]
     filename = video_recording.filename
     content_type = video_recording.content_type
     contents = await video_recording.read()
-    await add_file_to_db(filename, contents, content_type)
+    await add_file_and_metadata_to_blob_storage(filename, contents, content_type)
     return templates.TemplateResponse("uploaded.html", {"request": request})
 
 
 routes = [
     Route("/", homepage),
     Route("/gallery", gallery),
-    Route("/file_upload", file_upload, methods=["POST"]),
+    Route("/file_upload", upload_completed, methods=["POST"]),
     Route("/record", record),
     Route("/play", play),
     Route("/about", about),
