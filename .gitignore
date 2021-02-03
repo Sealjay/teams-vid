@@ -691,3 +691,5 @@ dist
 appsettings.json
 appsettings.Development.json
 .Azure/config
+uploads/
+uploads/*

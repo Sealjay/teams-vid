@@ -4,3 +4,6 @@ aiofiles
 jinja2
 bootstrap4
 python-multipart
+azure-storage-blob
+python-dotenv
+aiohttp
