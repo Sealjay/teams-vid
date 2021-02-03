@@ -1,22 +1,20 @@
 {% extends 'layout/base.html' %} {% block pagetitle %}Gallery{% endblock %} {%
 block container %}
 <div class="container">
-  <div class="d-flex align-content-start flex-wrap" style="border: 1px dashed rgb(66, 133, 244)">
-
-      {% for blob in blobs %}{% with
-      image_url=blob.image_url,author=blob.author,time='10m
-      ago',title=blob.title,badge=blob.badge %}{% include
-      'layout/thumbnail.html' %}{% endwith %}{% endfor %}
-    </div>
-    <nav aria-label="Page navigation example">
-      <ul class="pagination">
-        <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-        <li class="page-item"><a class="page-link" href="#">1</a></li>
-        <li class="page-item"><a class="page-link" href="#">2</a></li>
-        <li class="page-item"><a class="page-link" href="#">3</a></li>
-        <li class="page-item"><a class="page-link" href="#">Next</a></li>
-      </ul>
-    </nav>
+  <div class="d-flex align-content-start flex-wrap">
+    {% for blob in blobs %}{% with
+    image_url=blob.image_url,author=blob.author,time='10m
+    ago',title=blob.title,badge=blob.badge %}{% include 'layout/thumbnail.html'
+    %}{% endwith %}{% endfor %}
   </div>
-  {% endblock %}
+  <nav aria-label="Page navigation example">
+    <ul class="pagination">
+      <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+      <li class="page-item"><a class="page-link" href="#">1</a></li>
+      <li class="page-item"><a class="page-link" href="#">2</a></li>
+      <li class="page-item"><a class="page-link" href="#">3</a></li>
+      <li class="page-item"><a class="page-link" href="#">Next</a></li>
+    </ul>
+  </nav>
 </div>
+{% endblock %}

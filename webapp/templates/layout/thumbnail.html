@@ -1,13 +1,11 @@
-<div class="card w-25 bg-light border-dark m-2">
-  <img class="card-img-top" src="{{ image_url }}" height="128" width="128" />
+<div class="card bg-light border-secondary m-1" style="max-width: 12rem">
+  <img class="card-img-top" src="{{ image_url }}" alt="Card image key frame" />
   <div class="card-body">
     <h5 class="card-title">{{ title.title() }}</h5>
-    <p class="card-text">By {{ author }}.</p>
-  </div>
-  <div class="card-footer bg-transparent">
+    <h6 class="card-subtitle">@{{ author }}</h6>
     <p class="card-text">
-      <span class="badge badge-primary">{{ badge.title() }} </span>
-      <small class="text-muted">Uploaded {{ time }}</small>
+      <small class="text-muted">Uploaded {{ time }}.</small>
+      <a href="#" class="badge badge-primary">{{ badge.title() }}</a>
     </p>
   </div>
 </div>
