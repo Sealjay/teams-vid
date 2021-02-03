@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TeamsVid - {% block pagetitle %}{% endblock %}</title>
+    <base href="~/" />
+    <link href="{{ url_for('static', path='site.css') }}" rel="stylesheet" />
+    <link
+      href="{{ url_for('static', path='/css/bootstrap.min.css') }}"
+      integrity="sha256-LA89z+k9fjgMKQ/kq4OO2Mrf8VltYml/VES+Rg0fh20="
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      {% include 'layout/navbar.html' %}
+      {% block container %}
+      {% endblock %}
+      <footer class="footer">
+          <p>© Chris Lloyd-Jones 2020-2021.</p>
+      </footer>
+  </div>
+    <script
+      src=""{{ url_for('static', path='/js/bootstrap.min.js') }}"
+      integrity="sha256-5+02zu5UULQkO7w1GIr6vftCgMfFdZcAHeDtFnKZsBs="
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
