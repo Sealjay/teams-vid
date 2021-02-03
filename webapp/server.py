@@ -15,7 +15,7 @@ from starlette.staticfiles import StaticFiles
 import aiofiles
 import multipart
 from dotenv import dotenv_values
-from azure.storage.blob.aio import BlobClient
+from azure.storage.blob.aio import BlobClient, BlobServiceClient
 from azure.storage.blob import ContentSettings
 import os
 
@@ -28,7 +28,30 @@ async def homepage(request):
 
 
 async def gallery(request):
-    return templates.TemplateResponse("gallery.html", {"request": request})
+    blob_service_client = BlobServiceClient(
+        account_url=f"https://{config['AZURE_STORAGE_ACCOUNT']}.blob.core.windows.net/",
+        credential=config["AZURE_STORAGE_KEY"],
+    )
+    container_client = blob_service_client.get_container_client(
+        config["AZURE_STORAGE_VIDEO_CONTAINER"]
+    )
+    blobs_list = []
+    async for blob in container_client.list_blobs(include=["metadata"]):
+        metadata = blob.metadata
+        blobs_list.append(
+            {
+                "uuid": metadata["uuid"],
+                "image_url": "https://bootsnipp.com/bootstrap-builder/libs/builder/icons/image.svg",
+                "author": metadata["author"],
+                "title": metadata["title"],
+                "badge": metadata["badge"],
+            }
+        )
+    await container_client.close()
+    await blob_service_client.close()
+    return templates.TemplateResponse(
+        "gallery.html", {"request": request, "blobs": blobs_list}
+    )
 
 
 async def record(request):
@@ -56,9 +79,16 @@ async def add_file_to_db(file_name, file_contents, file_content_type):
         container_name=config["AZURE_STORAGE_VIDEO_CONTAINER"],
         blob_name=new_filename,
     )
+
     await blob.upload_blob(
         file_contents,
-        metadata={"original_file_name": file_name, "uuid": file_uuid_str},
+        metadata={
+            "original_file_name": file_name,
+            "uuid": file_uuid_str,
+            "author": "Dummy User",
+            "title": "Dummy title",
+            "badge": "dummy badge",
+        },
         content_settings=ContentSettings(content_type=file_content_type),
     )
     await blob.close()

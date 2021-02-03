@@ -1,34 +1,22 @@
 {% extends 'layout/base.html' %} {% block pagetitle %}Gallery{% endblock %} {%
 block container %}
 <div class="container">
-  <div class="row" style="border: 1px dashed rgb(66, 133, 244)">
-    <div class="col-sm-4">
-      {% with
-      image_url='https://bootsnipp.com/bootstrap-builder/libs/builder/icons/image.svg',
-      author='Chris LJ', time='10m ago', title='On the move', badge='Innovation'
-      %}{% include 'layout/thumbnail.html' %}{% endwith %}
+  <div class="d-flex align-content-start flex-wrap" style="border: 1px dashed rgb(66, 133, 244)">
+
+      {% for blob in blobs %}{% with
+      image_url=blob.image_url,author=blob.author,time='10m
+      ago',title=blob.title,badge=blob.badge %}{% include
+      'layout/thumbnail.html' %}{% endwith %}{% endfor %}
     </div>
-    <div class="col-sm-4 col-5">
-      {% with
-      image_url='https://bootsnipp.com/bootstrap-builder/libs/builder/icons/image.svg',
-      author='Chris LJ', time='10m ago', title='On the move', badge='Innovation'
-      %}{% include 'layout/thumbnail.html' %}{% endwith %}
-    </div>
-    <div class="col-sm-4 col-5">
-      {% with
-      image_url='https://bootsnipp.com/bootstrap-builder/libs/builder/icons/image.svg',
-      author='Chris LJ', time='10m ago', title='On the move', badge='Innovation'
-      %}{% include 'layout/thumbnail.html' %}{% endwith %}
-    </div>
+    <nav aria-label="Page navigation example">
+      <ul class="pagination">
+        <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+        <li class="page-item"><a class="page-link" href="#">1</a></li>
+        <li class="page-item"><a class="page-link" href="#">2</a></li>
+        <li class="page-item"><a class="page-link" href="#">3</a></li>
+        <li class="page-item"><a class="page-link" href="#">Next</a></li>
+      </ul>
+    </nav>
   </div>
-  <nav aria-label="Page navigation example" style="">
-    <ul class="pagination">
-      <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-      <li class="page-item"><a class="page-link" href="#">1</a></li>
-      <li class="page-item"><a class="page-link" href="#">2</a></li>
-      <li class="page-item"><a class="page-link" href="#">3</a></li>
-      <li class="page-item"><a class="page-link" href="#">Next</a></li>
-    </ul>
-  </nav>
+  {% endblock %}
 </div>
-{% endblock %}
