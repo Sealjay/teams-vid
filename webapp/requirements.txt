@@ -1,4 +1,5 @@
 starlette
+databases
 sqlalchemy
 aiofiles
 jinja2
@@ -6,4 +7,9 @@ bootstrap4
 python-multipart
 azure-storage-blob
 python-dotenv
+# Required for blob storage
 aiohttp
+# Required for deploying to Azure
+uvicorn
+uvloop
+httptools
