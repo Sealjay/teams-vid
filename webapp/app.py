@@ -141,9 +141,9 @@ middleware = [
         client_secret=os.getenv("GITHUB_CLIENT_SECRET"),
         require_auth=True,
         allow_users=os.getenv("GITHUB_ALLOWED_USERS").split(","),
-    ),  # TODO: Figure out why team authentication isn't working
+    ),  # FIXME: Figure out why team authentication isn't working
 ]
-
+# TODO: Disable GH auth on log running
 
 app = Starlette(debug=True, routes=routes, middleware=middleware)
 
