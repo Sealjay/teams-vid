@@ -1,2 +1,6 @@
 starlette
 sqlalchemy
+aiofiles
+jinja2
+bootstrap4
+python-multipart

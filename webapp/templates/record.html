@@ -1,0 +1,46 @@
+{% extends 'layout/base.html' %} {% block pagetitle %}Record{% endblock %} {%
+block container %}
+<h1>Record your masterpiece</h1>
+
+<form
+  method="post"
+  enctype="multipart/form-data"
+  action="/file_upload"
+  class="input-group"
+>
+  <div class="custom-file">
+    <label class="custom-file-label" for="video_recording" id="upload_label"
+      >Record or Select Video</label
+    >
+    <input
+      type="file"
+      accept="video/*"
+      capture="user"
+      (change)="getFile($event)"
+      id="video_recording"
+      name="video_recording"
+      class="custom-file-input"
+      aria-labelledby="upload_label"
+    />
+  </div>
+  <!--
+  @if (progress!=100) {
+    <div class="progress">
+        <div class="progress-bar" role="progressbar" aria-valuenow="@progress"
+        aria-valuemin="0" aria-valuemax="100" style="width:@progress%">
+            <span class="sr-only">@progress% Complete</span>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <strong>Uploading!</strong> Your video is being uploaded.
+    </div>
+} else {
+    <div class="alert alert-success">
+        <strong>Upload Complete.</strong> Your video has been uploaded for processing, and will be posted to Teams shortly.
+    </div> -->
+  <div class="input-group-append">
+    <button class="btn btn-primary" type="submit">Upload</button>
+  </div>
+</form>
+{% endblock %}
