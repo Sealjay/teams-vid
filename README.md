@@ -34,3 +34,6 @@ This web application intends to demonstrate how people could record themselves o
 4. [Create an Azure App Service with a Python Linux plan](https://docs.microsoft.com/en-us/azure/developer/python/tutorial-deploy-app-service-on-linux-03), and deploy the `webapp` folder.
 5. [Set the *Azure Startup Command* on your Azure App Service](https://docs.microsoft.com/en-us/azure/app-service/configure-language-python#customize-startup-command) to `gunicorn -c gunicorn_config.py app:app`.
 6. [Set the Azure App Service settings](https://docs.microsoft.com/en-us/azure/app-service/configure-common#configure-app-settings) for your blob storage, matching the names you used on your local `.env` file, or [use the extension in VS code](https://docs.microsoft.com/en-us/azure/developer/python/tutorial-deploy-app-service-on-linux-03#optional-upload-an-environment-variable-definitions-file).
+
+# Credit
+Thanks to the [Themestr](https://www.themestr.app) tool for a quick way to set up bootstrap.

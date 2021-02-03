@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TeamsVid - {% block pagetitle %}{% endblock %}</title>
     <base href="~/" />
-    <link href="{{ url_for('static', path='site.css') }}" rel="stylesheet" />
     <link
       href="{{ url_for('static', path='/css/bootstrap.min.css') }}"
       integrity="sha256-LA89z+k9fjgMKQ/kq4OO2Mrf8VltYml/VES+Rg0fh20="
       rel="stylesheet"
     />
+    <link href="{{ url_for('static', path='custom.min.css') }}" rel="stylesheet" />
   </head>
   <body>
     <div class="container">
