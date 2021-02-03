@@ -1,5 +1,13 @@
-<p>
-  <img src="{{ image_url }}" height="128" width="128" />
-</p>
-<p><em>{{ title }}</em> by {{ author }}, {{ time }}.</p>
-<span class="badge badge-primary">{{ badge }} </span>
+<div class="card w-25 bg-light border-dark m-2">
+  <img class="card-img-top" src="{{ image_url }}" height="128" width="128" />
+  <div class="card-body">
+    <h5 class="card-title">{{ title.title() }}</h5>
+    <p class="card-text">By {{ author }}.</p>
+  </div>
+  <div class="card-footer bg-transparent">
+    <p class="card-text">
+      <span class="badge badge-primary">{{ badge.title() }} </span>
+      <small class="text-muted">Uploaded {{ time }}</small>
+    </p>
+  </div>
+</div>
