@@ -5,7 +5,7 @@ import os
 from azure.storage.blob import ContentSettings
 from azure.storage.blob.aio import BlobClient, BlobServiceClient
 from starlette.applications import Starlette
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse, JSONResponse
 from starlette.staticfiles import StaticFiles
 from starlette.routing import Route, Mount
 from starlette.templating import Jinja2Templates
@@ -14,8 +14,7 @@ from starlette.middleware.gzip import GZipMiddleware
 import aiofiles  # pylint: disable=W0611
 import multipart  # pylint: disable=W0611
 from dotenv import load_dotenv
-
-
+from asgi_auth_github import GitHubAuth
 import uvicorn
 
 templates = Jinja2Templates(directory="templates")
@@ -111,6 +110,10 @@ async def upload_completed(request):
     return templates.TemplateResponse("uploaded.html", {"request": request})
 
 
+async def github_debug(request):
+    return JSONResponse({"auth": request.scope["auth"]})
+
+
 routes = [
     Route("/", homepage),
     Route("/gallery", gallery),
@@ -119,6 +122,7 @@ routes = [
     Route("/play", play),
     Route("/about", about),
     Route("/favicon.ico", FileResponse("static/favicon.ico")),
+    Route("/ghdebug", github_debug),
     Mount(
         "/static",
         app=StaticFiles(directory="static", packages=["bootstrap4"]),
@@ -131,6 +135,13 @@ middleware = [
     Middleware(
         uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware, trusted_hosts="*"
     ),
+    Middleware(
+        GitHubAuth,
+        client_id=os.getenv("GITHUB_CLIENT_ID"),
+        client_secret=os.getenv("GITHUB_CLIENT_SECRET"),
+        require_auth=True,
+        allow_users=os.getenv("GITHUB_ALLOWED_USERS").split(","),
+    ),  # TODO: Figure out why team authentication isn't working
 ]
 
 
