@@ -3,7 +3,7 @@ import databases
 import sqlalchemy
 import uuid
 from starlette.applications import Starlette
-from starlette.responses import JSONResponse, RedirectResponse
+from starlette.responses import FileResponse
 from starlette.routing import Route
 from starlette.applications import Starlette
 from starlette.routing import Mount
@@ -12,28 +12,32 @@ from starlette.applications import Starlette
 from starlette.routing import Route, Mount
 from starlette.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
+from starlette.middleware import Middleware
+from starlette.middleware.gzip import GZipMiddleware
 import aiofiles
 import multipart
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 from azure.storage.blob.aio import BlobClient, BlobServiceClient
 from azure.storage.blob import ContentSettings
 import os
+import uvicorn
 
 templates = Jinja2Templates(directory="templates")
-config = dotenv_values(os.path.join(os.path.dirname(__file__), ".env"))
+load_dotenv()
 
 
 async def homepage(request):
+    # print(request.headers)
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 async def gallery(request):
     blob_service_client = BlobServiceClient(
-        account_url=f"https://{config['AZURE_STORAGE_ACCOUNT']}.blob.core.windows.net/",
-        credential=config["AZURE_STORAGE_KEY"],
+        account_url=f"https://{os.getenv('AZURE_STORAGE_ACCOUNT')}.blob.core.windows.net/",
+        credential=os.getenv("AZURE_STORAGE_KEY"),
     )
     container_client = blob_service_client.get_container_client(
-        config["AZURE_STORAGE_VIDEO_CONTAINER"]
+        os.getenv("AZURE_STORAGE_VIDEO_CONTAINER")
     )
     blobs_list = []
     async for blob in container_client.list_blobs(include=["metadata"]):
@@ -74,9 +78,9 @@ async def add_file_to_db(file_name, file_contents, file_content_type):
         await file.write(file_contents)
         await file.close()
     blob = BlobClient(
-        account_url=f"https://{config['AZURE_STORAGE_ACCOUNT']}.blob.core.windows.net/",
-        credential=config["AZURE_STORAGE_KEY"],
-        container_name=config["AZURE_STORAGE_VIDEO_CONTAINER"],
+        account_url=f"https://{os.getenv('AZURE_STORAGE_ACCOUNT')}.blob.core.windows.net/",
+        credential=os.getenv("AZURE_STORAGE_KEY"),
+        container_name=os.getenv("AZURE_STORAGE_VIDEO_CONTAINER"),
         blob_name=new_filename,
     )
 
@@ -111,6 +115,7 @@ routes = [
     Route("/record", record),
     Route("/play", play),
     Route("/about", about),
+    Route("/favicon.ico", FileResponse("static/favicon.ico")),
     Mount(
         "/static",
         app=StaticFiles(directory="static", packages=["bootstrap4"]),
@@ -118,5 +123,15 @@ routes = [
     ),
 ]
 
+middleware = [
+    Middleware(GZipMiddleware, minimum_size=500),
+    Middleware(
+        uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware, trusted_hosts="*"
+    ),
+]
 
-app = Starlette(debug=True, routes=routes)
+
+app = Starlette(debug=True, routes=routes, middleware=middleware)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", log_level="info")
