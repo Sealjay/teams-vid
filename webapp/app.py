@@ -135,15 +135,18 @@ middleware = [
     Middleware(
         uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware, trusted_hosts="*"
     ),
-    Middleware(
-        GitHubAuth,
-        client_id=os.getenv("GITHUB_CLIENT_ID"),
-        client_secret=os.getenv("GITHUB_CLIENT_SECRET"),
-        require_auth=True,
-        allow_users=os.getenv("GITHUB_ALLOWED_USERS").split(","),
-    ),  # FIXME: Figure out why team authentication isn't working
 ]
-# TODO: Disable GH auth on log running
+
+if os.getenv("DEBUG", False) == False:
+    middleware.append(
+        Middleware(
+            GitHubAuth,
+            client_id=os.getenv("GITHUB_CLIENT_ID"),
+            client_secret=os.getenv("GITHUB_CLIENT_SECRET"),
+            require_auth=True,
+            allow_users=os.getenv("GITHUB_ALLOWED_USERS").split(","),
+        ),  # FIXME: Figure out why team authentication isn't working
+    )
 
 app = Starlette(debug=True, routes=routes, middleware=middleware)
 
