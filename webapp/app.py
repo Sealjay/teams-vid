@@ -23,6 +23,9 @@ load_dotenv()
 
 async def homepage(request):
     """Renders the default homepage."""
+    await request.send_push_promise("/static/custom.min.css")
+    await request.send_push_promise("/static/css/bootstrap.min.css")
+    await request.send_push_promise("/favicon.ico")
     return templates.TemplateResponse("index.html", {"request": request})
 
 
