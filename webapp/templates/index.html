@@ -8,8 +8,11 @@ block container %}
     How about we bring that to our day to day working lives?
   </p>
   <p>
-    <a class="btn btn-lg btn-success" href="#" role="button"
-      >Connect your account</a
+    <a
+      class="btn btn-lg btn-success"
+      href="{{ url_for('record') }}"
+      role="button"
+      >Post a Video</a
     >
   </p>
 </div>
@@ -18,8 +21,8 @@ block container %}
   <div class="col-lg-6">
     <h4>How does this work?</h4>
     <p>
-      Log in, connect your account, and share away. All of your data is stored
-      within the Azure tenant you deploy to, and is encoded using Azure.
+      You're authenticated with GitHub. All of your data is stored within the
+      Azure tenant you deploy to, and is encoded using Azure.
     </p>
   </div>
 </div>
