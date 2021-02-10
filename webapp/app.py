@@ -16,6 +16,7 @@ import multipart  # pylint: disable=W0611
 from dotenv import load_dotenv
 from asgi_auth_github import GitHubAuth
 import uvicorn
+from . import video_indexer
 
 templates = Jinja2Templates(directory="templates")
 load_dotenv()
@@ -119,6 +120,11 @@ async def github_debug(request):
     return JSONResponse({"auth": request.scope["auth"]})
 
 
+async def startup_get_video_indexer_token():
+    video_indexer_key = os.getenv("VIDEO_INDEXER_PRIMARY_KEY")
+    assert video_indexer_key is not None
+
+
 async def error_template(request, exc):
     """Returns an error template and a message specific to the error case."""
     error_messages = {
@@ -180,6 +186,7 @@ app = Starlette(
     routes=routes,
     middleware=middleware,
     exception_handlers=exception_handlers,
+    on_startup=[startup_get_video_indexer_token],
 )
 
 if __name__ == "__main__":

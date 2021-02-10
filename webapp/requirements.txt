@@ -10,6 +10,8 @@ python-dotenv
 asgi-auth-github
 # Required for blob storage
 aiohttp
+# Required for video indexer
+aiohttp[speedups]
 # Required for deploying to Azure
 uvicorn
 uvloop
