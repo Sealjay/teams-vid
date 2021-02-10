@@ -111,7 +111,29 @@ async def upload_completed(request):
 
 
 async def github_debug(request):
+    """Return the output from logged in GitHub users."""
+    # TODO: Remove from the final application
     return JSONResponse({"auth": request.scope["auth"]})
+
+
+async def error_template(request, exc):
+    """Returns an error template and a message specific to the error case."""
+    error_messages = {
+        404: "Sorry, the page you're looking for isn't here.",
+        500: "Server error.",
+    }
+    if exc.status_code in error_messages:
+        error_message = error_messages[exc.status_code]
+    else:
+        error_message = "No message saved for this error."
+    return templates.TemplateResponse(
+        "layout/error.html",
+        {
+            "request": request,
+            "error_code": exc.status_code,
+            "error_message": error_message,
+        },
+    )
 
 
 routes = [
@@ -137,7 +159,9 @@ middleware = [
     ),
 ]
 
-if os.getenv("DEBUG", False) == False:
+exception_handlers = {404: error_template, 500: error_template}
+
+if os.getenv("DEBUG", None) is None:
     middleware.append(
         Middleware(
             GitHubAuth,
@@ -148,7 +172,12 @@ if os.getenv("DEBUG", False) == False:
         ),  # FIXME: Figure out why team authentication isn't working
     )
 
-app = Starlette(debug=True, routes=routes, middleware=middleware)
+app = Starlette(
+    debug=True,
+    routes=routes,
+    middleware=middleware,
+    exception_handlers=exception_handlers,
+)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", log_level="info")
