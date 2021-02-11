@@ -82,10 +82,12 @@ async def play(request):
     async with await video_indexer.get_video_index(video_id) as response:
         video_details = await response.json()
         state = video_details["state"]
-    if state == "processing":
-        player_widget_url = "#"
-        insights_widget_url = "#"
+    if state == "Processing":
+        player_widget_url = ""
+        insights_widget_url = ""
+        message = "This video is still being processed - check back shortly."
     else:
+        message = ""
         async with await video_indexer.get_video_access_token(
             video_id, False  # TODO: Remove hard coding of edit prevention
         ) as response:
@@ -106,6 +108,7 @@ async def play(request):
             "request": request,
             "player_widget_url": player_widget_url,
             "insights_widget_url": insights_widget_url,
+            "message": message,
         },
     )
 
