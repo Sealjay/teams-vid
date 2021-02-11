@@ -25,13 +25,17 @@ class AsyncVideoIndexer:
 
     async def get_access_token(self):
         self.access_token = None
+        print("Rotating token for Video Indexer.")
+        params = {"allowEdit": "true"}
         async with await self.video_indexer_request(
-            "AccessToken", "get", operation_prefix="Auth/"
+            "AccessToken", "get", operation_prefix="Auth/", params=params
         ) as response:
             self.access_token = await response.json()
-        asyncio.create_task(
-            asyncio.sleep(3540, self.get_access_token())
-        )  # renew_token_every_hour
+        asyncio.create_task(self.wait_to_rotate_token())
+
+    async def wait_to_rotate_token(self):
+        await asyncio.sleep(3540)  # renew_token_every_hour, give or take
+        await self.get_access_token()
 
     async def get_video_access_token(self, video_id):
         response = await self.video_indexer_request(
@@ -109,7 +113,6 @@ class AsyncVideoIndexer:
             + f"Accounts/{self.account_id}/"
             + api_resource
         )
-        print(api_endpoint)
         return operation(api_endpoint, params=params, headers=headers)
 
 
@@ -119,17 +122,41 @@ async def main():
         os.environ.get("VIDEO_INDEXER_KEY"),
         os.environ.get("VIDEO_INDEXER_ACCOUNT_LOCATION"),
     )
-    async with await video_indexer.get_video_index("5f029373e3") as response:
+
+    video_to_upload = (
+        "https://teamsvid011.blob.core.windows.net/videostoprocess/"
+        + "204a9799-de7d-435f-90e0-40fcf116c5c0.mov?sv=2019-12-12&st="
+        + "2021-01-11T01%3A17%3A00Z&se=2021-04-12T00%3A17%3A00Z&sr=b"
+        + "&sp=r&sig=bpQ4sP4GqFKcZaSslR8mPmeLVlGpr2J9FPOfou8M8B4%3D"
+    )
+    # async with await video_indexer.upload_video_from_url(
+    #    "test video", "apple", "https://google.com", video_to_upload
+    # ) as response:
+    #    video_details = await response.json()
+    async with await video_indexer.get_video_id_by_external_id("apple") as response:
+        video_id = await response.json()
+    async with await video_indexer.get_video_index(video_id) as response:
         video_details = await response.json()
-    async with await video_indexer.get_video_access_token("5f029373e3") as response:
-        video_access_token = await response.json()
-    print(video_access_token)
-    headers = {"Authorization": f"Bearer {video_access_token}"}
-    async with await video_indexer.get_video_player_widget(
-        video_details["id"], headers=headers
-    ) as response:
-        video_details = await response.text()
-    print(video_details)
+        print(video_details["state"])
+        print(json.dumps(video_details))
+        thumbnail_id = video_details["videos"][0]["thumbnailId"]
+    async with await video_indexer.get_thumbnail(video_id, thumbnail_id) as response:
+        video_details = await response.json()
+        print(video_details)
+        # print(video_details["state"])
+
+    if False:
+        async with await video_indexer.get_video_index("5f029373e3") as response:
+            video_details = await response.json()
+        async with await video_indexer.get_video_access_token("5f029373e3") as response:
+            video_access_token = await response.json()
+        print(video_access_token)
+        headers = {"Authorization": f"Bearer {video_access_token}"}
+        async with await video_indexer.get_video_player_widget(
+            video_details["id"], headers=headers
+        ) as response:
+            video_details = await response.text()
+        print(video_details)
 
 
 if __name__ == "__main__":
