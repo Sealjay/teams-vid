@@ -37,9 +37,17 @@ class AsyncVideoIndexer:
         await asyncio.sleep(3540)  # renew_token_every_hour, give or take
         await self.get_access_token()
 
-    async def get_video_access_token(self, video_id):
+    async def get_video_access_token(self, video_id, allow_edit=False):
+        if allow_edit:
+            allow_edit = "true"
+        else:
+            allow_edit = "false"
+        params = {"allowEdit": allow_edit}
         response = await self.video_indexer_request(
-            f"Videos/{video_id}/AccessToken", "get", operation_prefix="Auth/"
+            f"Videos/{video_id}/AccessToken",
+            "get",
+            operation_prefix="Auth/",
+            params=params,
         )
         return response
 
@@ -73,7 +81,6 @@ class AsyncVideoIndexer:
         params = {
             "videoId": video_id,
         }
-        print(video_id)
         response = await self.video_indexer_request(
             f"Videos/{video_id}/Index", "get", params=params
         )
@@ -88,11 +95,27 @@ class AsyncVideoIndexer:
         )
         return response
 
-    async def get_video_player_widget(self, video_id, headers=None):
-        response = await self.video_indexer_request(
-            f"Videos/{video_id}/PlayerWidget", "get", headers=headers
+    async def get_video_player_widget_url(self, video_id, video_access_token):
+        url = (
+            f"https://api.videoindexer.ai/{self.location}/"
+            + f"Accounts/{self.account_id}/"
+            + f"Videos/{video_id}/PlayerWidget?accessToken={video_access_token}"
         )
-        return response
+        return url
+
+    async def get_video_insights_widget_url(
+        self, video_id, video_access_token, allow_edit=False
+    ):
+        if allow_edit:
+            allow_edit = "true"
+        else:
+            allow_edit = "false"
+        url = (
+            f"https://api.videoindexer.ai/{self.location}/"
+            + f"Accounts/{self.account_id}/"
+            + f"Videos/{video_id}/InsightsWidget?accessToken={video_access_token}&allowEdit={allow_edit}"
+        )
+        return url
 
     async def video_indexer_request(
         self, api_resource, operation, params=None, headers=None, operation_prefix=""

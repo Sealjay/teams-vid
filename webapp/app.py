@@ -75,7 +75,39 @@ async def record(request):
 
 async def play(request):
     """Renders the video player view."""
-    return templates.TemplateResponse("play.html", {"request": request})
+    video_uuid = request.query_params["video_uuid"]
+    video_indexer = app.state.video_indexer
+    async with await video_indexer.get_video_id_by_external_id(video_uuid) as response:
+        video_id = await response.json()
+    async with await video_indexer.get_video_index(video_id) as response:
+        video_details = await response.json()
+        state = video_details["state"]
+    if state == "processing":
+        player_widget_url = "#"
+        insights_widget_url = "#"
+    else:
+        async with await video_indexer.get_video_access_token(
+            video_id, False  # TODO: Remove hard coding of edit prevention
+        ) as response:
+            video_access_token = await response.json()
+            print(video_access_token)
+        player_widget_url = await video_indexer.get_video_player_widget_url(
+            video_id, video_access_token
+        )
+        insights_widget_url = await video_indexer.get_video_insights_widget_url(
+            video_id,
+            video_access_token,
+            False,  # TODO: Remove hard coding of edit prevention
+        )
+
+    return templates.TemplateResponse(
+        "play.html",
+        {
+            "request": request,
+            "player_widget_url": player_widget_url,
+            "insights_widget_url": insights_widget_url,
+        },
+    )
 
 
 async def about(request):
@@ -125,7 +157,6 @@ async def add_file_and_metadata_to_blob_storage(
         sas_url,
     ) as response:
         response_json = await response.json()
-        print(response_json)
     await blob_client.close()
 
 
@@ -149,7 +180,6 @@ async def video_processed(request):
 
 async def video_thumbnail(request):
     video_uuid = request.query_params["video_uuid"]
-    print(video_uuid)
     video_indexer = app.state.video_indexer
     async with await video_indexer.get_video_id_by_external_id(video_uuid) as response:
         video_id = await response.json()
@@ -163,7 +193,6 @@ async def video_thumbnail(request):
             "https://bootsnipp.com/bootstrap-builder/libs/builder/icons/image.svg"
         )
     else:
-        print("thumbnail id")
         thumbnail_id = video_details["videos"][0]["thumbnailId"]
     async with await video_indexer.get_thumbnail(video_id, thumbnail_id) as response:
         thumbnail_file = await response.read()
