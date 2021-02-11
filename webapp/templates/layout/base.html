@@ -11,6 +11,7 @@
       rel="stylesheet"
     />
     <link href="{{ url_for('static', path='custom.min.css') }}" rel="stylesheet" />
+    {% block header %}{% endblock %}
   </head>
   <body>
     <div class="container">
@@ -26,5 +27,6 @@
       integrity="sha256-5+02zu5UULQkO7w1GIr6vftCgMfFdZcAHeDtFnKZsBs="
       crossorigin="anonymous"
     ></script>
+    {% block footer %}{% endblock %}
   </body>
 </html>
