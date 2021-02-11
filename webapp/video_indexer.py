@@ -1,3 +1,4 @@
+from asyncio.tasks import sleep
 import os
 import aiohttp
 import asyncio
@@ -18,19 +19,19 @@ class AsyncVideoIndexer:
         self.access_token = None
         self.session = aiohttp.ClientSession()
         if get_access_token:
-            self.access_token = await self.get_access_token()
-            print(self.access_token)
+            await self.get_access_token()
+        await sleep(2)
         return self
 
     async def get_access_token(self):
         headers = {"Ocp-Apim-Subscription-Key": self.subscription_key}
-        asyncio.create_task(
-            asyncio.sleep(3600, self.get_access_token())
-        )  # renew_token_every_hour
-        response = await self.video_indexer_request(
+        async with await self.video_indexer_request(
             f"AccessToken", "get", headers=headers
-        )
-        return response
+        ) as response:
+            text = await response.text()
+
+        print(text)
+        await asyncio.sleep(3600, self.get_access_token())  # renew_token_every_hour
 
     async def upload_video(self):
         response = await self.video_indexer_request(f"Videos")
@@ -60,11 +61,12 @@ class AsyncVideoIndexer:
         if headers is None:
             headers = {}
         api_endpoint = (
-            f"https://api.videoindexer.ai/{self.location}/"
+            f"https://api.videoindexer.ai/Auth/{self.location}/"
             + f"Accounts/{self.account_id}/"
+            + api_resource
         )
-        async with operation(api_endpoint, params=params, headers=headers) as response:
-            return response
+        print(api_endpoint)
+        return operation(api_endpoint, params=params, headers=headers)
 
 
 async def main():
