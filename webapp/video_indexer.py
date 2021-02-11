@@ -1,52 +1,58 @@
-from asyncio.tasks import sleep
-import os
+"""A class for interacting with Video Indexer using asyncio.
+Does not implement all API facilities."""
+# pylint: disable=W0201
+
+from datetime import datetime, timedelta
 import aiohttp
-import asyncio
-import json
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
 
 class AsyncVideoIndexer:
+    """A class for interacting with Video Indexer using asyncio."""
+
     @classmethod
     async def create(
-        cls, account_id, subscription_key, location, get_access_token=True
+        cls, account_id, subscription_key, location, get_access_token_on_startup=True
     ):
+        """Acts as the __init__ method.
+        This triggers W0201.
+        Using an @classmethod rather than __init__ in order to init async."""
         self = AsyncVideoIndexer()
         self.account_id = account_id
         self.subscription_key = subscription_key
         self.location = location
         self.access_token = None
+        self.next_access_token_reset_required = datetime.now()
         self.session = aiohttp.ClientSession()
-        if get_access_token:
+        if get_access_token_on_startup:
             await self.get_access_token()
         return self
 
     async def get_access_token(self):
+        """Rotates the current bearer token."""
         self.access_token = None
         print("Rotating token for Video Indexer.")
         params = {"allowEdit": "true"}
-        async with await self.video_indexer_request(
-            "AccessToken", "get", operation_prefix="Auth/", params=params
+        async with await self.video_indexer_auth_request(
+            "AccessToken", params=params
         ) as response:
             self.access_token = await response.json()
-        asyncio.create_task(self.wait_to_rotate_token())
-
-    async def wait_to_rotate_token(self):
-        await asyncio.sleep(3540)  # renew_token_every_hour, give or take
-        await self.get_access_token()
+            self.next_access_token_reset_required = (
+                timedelta(minutes=59) + datetime.now()
+            )
 
     async def get_video_access_token(self, video_id, allow_edit=False):
+        """Gets a bearer token for accessing an individual video."""
         if allow_edit:
             allow_edit = "true"
         else:
             allow_edit = "false"
         params = {"allowEdit": allow_edit}
-        response = await self.video_indexer_request(
+        response = await self.video_indexer_auth_request(
             f"Videos/{video_id}/AccessToken",
-            "get",
-            operation_prefix="Auth/",
             params=params,
         )
         return response
@@ -54,48 +60,54 @@ class AsyncVideoIndexer:
     async def upload_video_from_url(
         self, video_name, video_external_id, callback_url, video_url
     ):
+        """Instructs Video Indexer to ingest a video from provided URL."""
         params = {
             "name": video_name,
             "externalId": video_external_id,
             "callbackUrl": callback_url,
             "videoUrl": video_url,
         }
-        response = await self.video_indexer_request(f"Videos", "post", params=params)
+        response = await self.video_indexer_api_request("Videos", "post", params=params)
         return response
 
     async def list_videos(self):
-        response = await self.video_indexer_request(f"Videos", "get")
+        """Lists all videos on the current account."""
+        response = await self.video_indexer_api_request("Videos", "get")
         return response
 
     async def get_thumbnail(self, video_id, thumbnail_id):
+        """Returns the thumbnail content for the provided video ID."""
         params = {
             "videoId": video_id,
             "thumbnailId": thumbnail_id,
         }
-        response = await self.video_indexer_request(
+        response = await self.video_indexer_api_request(
             f"Videos/{video_id}/Thumbnails/{thumbnail_id}", "get", params=params
         )
         return response
 
     async def get_video_index(self, video_id):
+        """Returns video information the provided video id."""
         params = {
             "videoId": video_id,
         }
-        response = await self.video_indexer_request(
+        response = await self.video_indexer_api_request(
             f"Videos/{video_id}/Index", "get", params=params
         )
         return response
 
     async def get_video_id_by_external_id(self, external_id):
+        """Gets the Video Indexer ID using an externally provided ID."""
         params = {
             "externalId": external_id,
         }
-        response = await self.video_indexer_request(
-            f"Videos/GetIdByExternalId", "get", params=params
+        response = await self.video_indexer_api_request(
+            "Videos/GetIdByExternalId", "get", params=params
         )
         return response
 
     async def get_video_player_widget_url(self, video_id, video_access_token):
+        """Gets the video player widget."""
         url = (
             f"https://api.videoindexer.ai/{self.location}/"
             + f"Accounts/{self.account_id}/"
@@ -106,6 +118,7 @@ class AsyncVideoIndexer:
     async def get_video_insights_widget_url(
         self, video_id, video_access_token, allow_edit=False
     ):
+        """Gets the video insights Widget, as well as whether users should be able to edit."""
         if allow_edit:
             allow_edit = "true"
         else:
@@ -113,13 +126,15 @@ class AsyncVideoIndexer:
         url = (
             f"https://api.videoindexer.ai/{self.location}/"
             + f"Accounts/{self.account_id}/"
-            + f"Videos/{video_id}/InsightsWidget?accessToken={video_access_token}&allowEdit={allow_edit}"
+            + f"Videos/{video_id}/InsightsWidget?accessToken={video_access_token}"
+            + "&allowEdit={allow_edit}"
         )
         return url
 
-    async def video_indexer_request(
-        self, api_resource, operation, params=None, headers=None, operation_prefix=""
+    async def video_indexer_api_request(
+        self, api_resource, operation, params=None, headers=None
     ):
+        """Used for most Async Get and Post API requests."""
         operations = {"get": self.session.get, "post": self.session.post}
         assert operation in operations
         operation = operations[operation]
@@ -127,61 +142,29 @@ class AsyncVideoIndexer:
             params = {}
         if headers is None:
             headers = {}
+        assert isinstance(self.next_access_token_reset_required, datetime)
+        current_datetime = datetime.now()
+        if self.next_access_token_reset_required < current_datetime:
+            await self.get_access_token()
         if self.access_token is not None:
             if "Authorization" not in headers:
                 headers["Authorization"] = f"Bearer {self.access_token}"
         headers["Ocp-Apim-Subscription-Key"] = self.subscription_key
         api_endpoint = (
-            f"https://api.videoindexer.ai/{operation_prefix}{self.location}/"
+            f"https://api.videoindexer.ai/{self.location}/"
             + f"Accounts/{self.account_id}/"
             + api_resource
         )
         return operation(api_endpoint, params=params, headers=headers)
 
-
-async def main():
-    video_indexer = await AsyncVideoIndexer.create(
-        os.environ.get("VIDEO_INDEXER_ACCOUNT_ID"),
-        os.environ.get("VIDEO_INDEXER_KEY"),
-        os.environ.get("VIDEO_INDEXER_ACCOUNT_LOCATION"),
-    )
-
-    video_to_upload = (
-        "https://teamsvid011.blob.core.windows.net/videostoprocess/"
-        + "204a9799-de7d-435f-90e0-40fcf116c5c0.mov?sv=2019-12-12&st="
-        + "2021-01-11T01%3A17%3A00Z&se=2021-04-12T00%3A17%3A00Z&sr=b"
-        + "&sp=r&sig=bpQ4sP4GqFKcZaSslR8mPmeLVlGpr2J9FPOfou8M8B4%3D"
-    )
-    # async with await video_indexer.upload_video_from_url(
-    #    "test video", "apple", "https://google.com", video_to_upload
-    # ) as response:
-    #    video_details = await response.json()
-    async with await video_indexer.get_video_id_by_external_id("apple") as response:
-        video_id = await response.json()
-    async with await video_indexer.get_video_index(video_id) as response:
-        video_details = await response.json()
-        print(video_details["state"])
-        print(json.dumps(video_details))
-        thumbnail_id = video_details["videos"][0]["thumbnailId"]
-    async with await video_indexer.get_thumbnail(video_id, thumbnail_id) as response:
-        video_details = await response.json()
-        print(video_details)
-        # print(video_details["state"])
-
-    if False:
-        async with await video_indexer.get_video_index("5f029373e3") as response:
-            video_details = await response.json()
-        async with await video_indexer.get_video_access_token("5f029373e3") as response:
-            video_access_token = await response.json()
-        print(video_access_token)
-        headers = {"Authorization": f"Bearer {video_access_token}"}
-        async with await video_indexer.get_video_player_widget(
-            video_details["id"], headers=headers
-        ) as response:
-            video_details = await response.text()
-        print(video_details)
-
-
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    async def video_indexer_auth_request(self, api_resource, params=None):
+        """Used to get Access tokens- generally and for video access"""
+        if params is None:
+            params = {}
+        headers = {"Ocp-Apim-Subscription-Key": self.subscription_key}
+        api_endpoint = (
+            f"https://api.videoindexer.ai/Auth/{self.location}/"
+            + f"Accounts/{self.account_id}/"
+            + api_resource
+        )
+        return self.session.get(api_endpoint, params=params, headers=headers)
