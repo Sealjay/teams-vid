@@ -221,3 +221,4 @@ appsettings.Development.json
 .Azure/config
 uploads/
 uploads/*
+*.env
