@@ -1,4 +1,9 @@
 # Teams Vid
+
+> **⚠️ ARCHIVED**: This repository is archived and no longer maintained. Azure Media Services Video Indexer, which this project relied upon, has been retired by Microsoft.
+
+> **🏆 Hackathon Winner**: This project was a winning entry in the COVID-19 hackathon. [View on Devpost](https://devpost.com/software/teamsvid-covid-connection)
+
 This web application intends to demonstrate how people could record themselves on the fly, to stay in sync with their teams, wherever they may be.
 
 ## Software Installation
